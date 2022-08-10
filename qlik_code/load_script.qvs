@@ -1,0 +1,190 @@
+/*
+Mapping tab
+*/
+Map_Sex:
+Mapping
+Load * Inline [
+SEX, sex,
+1, Men
+2, Women
+];
+
+Map_Period:
+Mapping
+Load * Inline [
+PERIOD, period,
+1, Period 1
+2, Period 2
+3, Period 3
+];
+
+Map_Bpmeds:
+Mapping
+Load * Inline [
+BPMEDS, bpmeds,
+0, Not currently used
+1, Current Use
+];
+
+Map_Cursmoke:
+Mapping
+Load * Inline [
+CURSMOKE, cursmoke,
+0, Not current smoker
+1, Current smoker
+];
+
+Map_Cigpday:
+Mapping
+Load * Inline [
+CIGPDAY, cigpday,
+0, Not current smoker
+];
+
+Map_Educ:
+Mapping
+Load * Inline [
+educ, Educ,
+1, 0-11 years
+2, High School Diploma, GED
+3, 'Some College, Vocational School'
+4, 'College (BS, BA) degree or more'
+];
+
+Map_Diabetes:
+Mapping
+Load * Inline [
+DIABETES, diabetes,
+0, Not a diabetic
+1, Diabetic
+];
+
+Map_Prevap:
+Mapping
+Load * Inline [
+PREVAP, prevap,
+0, Free of disease
+1, Prevalent disease
+];
+
+Map_Prevchd:
+Mapping
+Load * Inline [
+PREVCHD, prevchd,
+0, Free of disease
+1, Prevalent disease
+];
+
+Map_Prevmi:
+Mapping
+Load * Inline [
+PREVMI, prevmi,
+0, Free of disease
+1, Prevalent disease
+];
+
+Map_Prevstrk:
+Mapping
+Load * Inline [
+PREVSTRK, prevstrk,
+0, Free of disease
+1, Prevalent disease
+];
+
+Map_Prevhyp:
+Mapping
+Load * Inline [
+PREVHYP, prevhyp,
+0, Free of disease
+1, Prevalent disease
+];
+
+
+
+/*
+Framingham data tab
+*/
+Framingham:
+LOAD
+    RANDID,
+    SEX as SexFlag,
+	if(PERIOD = '1', SEX) As SEX_p1,
+    if(PERIOD = '2', SEX) As SEX_p2,
+    if(PERIOD = '3', SEX) As SEX_p3,
+    ApplyMap('Map_Sex',SEX,'Not Avaliable') as SEX,
+    Num(TOTCHOL) as TOTCHOL,
+    if(Num(TOTCHOL) < 125, 'Low'
+        , if(Num(TOTCHOL) <= 200, 'Normal'
+            , if(Num(TOTCHOL) > 200, 'High'
+    ))) As [Cholesterol Range],
+    if(PERIOD = '1', TOTCHOL) As TOTCHOL_p1,
+    if(PERIOD = '2', TOTCHOL) As TOTCHOL_p2,
+    if(PERIOD = '3', TOTCHOL) As TOTCHOL_p3,
+    "AGE",
+    if([AGE] <= 42, Dual('32 - 42', 1),
+    if([AGE] <= 52, Dual('43 - 52', 2),
+    if([AGE] <= 62, Dual('53 - 62', 3),
+    if([AGE] <= 72, Dual('63 - 72', 4),
+    if([AGE] <= 81, Dual('73 - 81', 5)
+    ))))) As [AGE Range],
+    SYSBP,
+    DIABP,    
+    CURSMOKE as CursmokeFlag,
+    ApplyMap('Map_Cursmoke',CURSMOKE,'Not Avaliable') as CURSMOKE,
+    CIGPDAY as CigpdayFlag,
+    ApplyMap('Map_Cigpday',CIGPDAY,CIGPDAY) as CIGPDAY,
+    Num(BMI) as BMI,
+    if(SEX=1, Num(BMI)) as BMI_Men,
+    if(SEX=2, Num(BMI)) as BMI_Women,
+    if([BMI] <= 18.5, Dual('-18.5 (Underweight)', 1),
+    if([BMI] <= 24.9, Dual('18.5 - 24.9 (Normal)', 2),
+    if([BMI] < 30, Dual('25 - 29.9 (Overweight)', 3),
+    if([BMI] >= 30, Dual('30+ (Obese)', 4)
+    )))) As [BMI Range],
+    DIABETES as DiabetesFlag,
+    ApplyMap('Map_Diabetes',DIABETES,'Not Avaliable') as DIABETES,
+    BPMEDS as BpmedsFlag,
+    ApplyMap('Map_Bpmeds',BPMEDS,'Not Avaliable') as BPMEDS,
+    HEARTRTE,
+    Num(GLUCOSE) as GLUCOSE,
+    if(Num(GLUCOSE) < 80, Dual('Low', 1)
+        , if(Num(GLUCOSE) <= 125, Dual('Normal', 2)
+            , if(Num(GLUCOSE) > 125, Dual('High', 3)
+    ))) As [GLUCOSE Range],
+    educ as EducFlag,
+    Dual(ApplyMap('Map_Educ',educ,'Not Avaliable'),educ) as EDUC,
+    PREVCHD as PrevchdFlag,
+    ApplyMap('Map_Prevchd',PREVCHD,'Not Avaliable') as PREVCHD,
+    PREVAP as PrevapFlag,
+    ApplyMap('Map_Prevap',PREVAP,'Not Avaliable') as PREVAP,
+    PREVMI as PrevmiFlag,
+    ApplyMap('Map_Prevmi',PREVMI,'Not Avaliable') as PREVMI,
+    PREVSTRK as PrevstrkFlag,
+    ApplyMap('Map_Prevstrk',PREVSTRK,'Not Avaliable') as PREVSTRK,
+    PREVHYP as PrevhypFlag,
+    ApplyMap('Map_Prevhyp',PREVHYP,'Not Avaliable') as PREVHYP,
+    "TIME",
+    PERIOD as PeriodFlag,
+    ApplyMap('Map_Period',PERIOD,'Not Avaliable') as PERIOD,
+    HDLC,
+    LDLC,
+    DEATH,
+    ANGINA,
+    HOSPMI,
+    MI_FCHD,
+    ANYCHD,
+    STROKE,
+    CVD,
+    HYPERTEN,
+    TIMEAP,
+    TIMEMI,
+    TIMEMIFC,
+    TIMECHD,
+    TIMESTRK,
+    TIMECVD,
+    TIMEDTH,
+    TIMEHYP
+FROM [lib://YOUR_CONNECTION_HERE:DataFiles/Framingham_Data.csv]
+(txt, codepage is 28591, embedded labels, delimiter is ',', msq);
+
+
