@@ -188,3 +188,98 @@ FROM [lib://YOUR_CONNECTION_HERE:DataFiles/Framingham_Data.csv]
 (txt, codepage is 28591, embedded labels, delimiter is ',', msq);
 
 
+/*
+Reference Stat Tables tab
+*/
+
+// T1:
+// Load * Inline [
+// Year, Product, Jan, Feb, Mar, Apr
+// 2000, Toy, 100, 200, 300, 400
+// 2001, Toy, 500, 600, 700, 800];
+// CrossTable(Months,Sales,2)
+// T2:
+// Load *
+// Resident T1;
+// Drop table T1;
+
+// for 95% CF
+// If it is one tail: use the column 0.05
+// If it is two tail: use the column 0.025
+T_Reference_temp:
+LOAD
+    "degrees of freedom" As t_df,
+    "0.025" As t_value
+FROM [lib://Statistics:DataFiles/StatisticsTables_forLoad.xls]
+(biff, embedded labels, table is [t table$]);
+
+T_Reference:
+Load
+	RowNo() As t_row,
+    t_df,
+    t_value
+Resident T_Reference_temp
+Order By t_df;
+
+Drop table T_Reference_temp;
+
+
+// Chi2
+Chi2_Reference_Temp:
+LOAD
+    df As Chi2_df,
+    "0.05" As Chi2_value
+FROM [lib://Statistics:DataFiles/Chi_square_forLoad.xls]
+(biff, embedded labels, table is [chi square table$]);
+
+
+Chi2_Reference:
+Load 
+	RowNo() As chi2_row,
+    Chi2_df,
+    Chi2_value
+Resident Chi2_Reference_Temp
+Order By Chi2_df;
+
+
+Drop Table Chi2_Reference_Temp;
+
+
+
+
+
+
+/*
+Participant Change tab
+*/
+
+Participants:
+Load *,
+	/*
+    The change is calculated by the Last measure - the First Measure
+    Alt helps to find the Last and First
+    Documentation for Alt: https://help.qlik.com/en-US/cloud-services/Subsystems/Hub/Content/Sense_Hub/Scripting/ConditionalFunctions/alt.htm
+    */
+	 Alt([P3 SYSBP], Alt([P2 SYSBP], [P1 SYSBP])) // Last Measure
+     - 
+     Alt([P1 SYSBP], Alt([P2 SYSBP], [P3 SYSBP])) // First Measure
+     As [Total SYSBP Change],
+     
+     Alt([P3 TOTCHOL], Alt([P2 TOTCHOL], [P1 TOTCHOL])) // Last Measure
+     - 
+     Alt([P1 TOTCHOL], Alt([P2 TOTCHOL], [P3 TOTCHOL])) // First Measure
+     As [Total CHOL Change]
+;
+Load
+	RANDID,
+    1 As ParticipantFlag,
+    Count(VisitNo) As Visits,
+    Max(SYSBP_p1) As [P1 SYSBP],
+    Max(SYSBP_p2) As [P2 SYSBP],
+    Max(SYSBP_p3) As [P3 SYSBP],
+    Max(TOTCHOL_p1) As [P1 TOTCHOL],
+    Max(TOTCHOL_p2) As [P2 TOTCHOL],
+    Max(TOTCHOL_p3) As [P3 TOTCHOL]    
+Resident Framingham
+Group By RANDID;
+
